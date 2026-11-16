@@ -28,10 +28,18 @@ PLACEHOLDER=$!
 trap 'kill $PLACEHOLDER 2>/dev/null || true' EXIT
 
 for i in $(seq 1 60); do
-  if STATE=$($PHP /opt/moodle-railway/dbstate.php 2>/dev/null); then break; fi
+  if STATE=$($PHP /opt/moodle-railway/dbstate.php state 2>/dev/null); then break; fi
   log "waiting for the database ($i)"; sleep 5
 done
 [ -n "${STATE:-}" ] || { echo "database unreachable" >&2; exit 1; }
+
+if [ "$STATE" = "partial" ]; then
+  # A first install was stopped before it finished (for example by a redeploy). It holds no
+  # user data yet, so drop its tables and install again.
+  log "found an unfinished first install: starting it again"
+  $PHP /opt/moodle-railway/dbstate.php reset
+  STATE=empty
+fi
 
 if [ "$STATE" = "empty" ]; then
   : "${MOODLE_ADMIN_PASSWORD:?MOODLE_ADMIN_PASSWORD must be set for the first install}"
@@ -41,9 +49,14 @@ if [ "$STATE" = "empty" ]; then
         --fullname="${MOODLE_SITE_NAME:-Moodle}" --shortname="${MOODLE_SITE_SHORTNAME:-Moodle}")
   [ -n "${MOODLE_ADMIN_EMAIL:-}" ] && ARGS+=(--adminemail="$MOODLE_ADMIN_EMAIL")
   as_www $PHP "$APP/admin/cli/install_database.php" "${ARGS[@]}"
+  $PHP /opt/moodle-railway/dbstate.php mark
   log "install finished"
 else
   log "existing site: running upgrade check"
+  # Only one Moodle container runs at a time (the data volume attaches to one), so an upgrade
+  # lock found now was left by a container that stopped mid-upgrade.
+  $PHP /opt/moodle-railway/dbstate.php unlock
+  $PHP /opt/moodle-railway/dbstate.php mark
   if ! as_www $PHP "$APP/admin/cli/upgrade.php" --non-interactive; then
     echo "upgrade failed: see the log above" >&2; exit 1
   fi

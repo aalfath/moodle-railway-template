@@ -13,7 +13,8 @@ A Railway template for [Moodle LMS](https://moodle.org), the open-source learnin
 
 1. Waits for Postgres.
 2. On an empty database, installs Moodle with the CLI installer. The admin user is `admin`, with the generated password in `MOODLE_ADMIN_PASSWORD`. Moodle's web installer is never reachable: until the install finishes, every page answers "Moodle is starting".
-3. On an existing site, runs `admin/cli/upgrade.php --non-interactive`, so a version bump in this repo upgrades the database on the next deploy.
+3. On an existing site, runs `admin/cli/upgrade.php --non-interactive`, so a version bump in this repo upgrades the database on the next deploy. It clears an upgrade lock left by a container that was stopped mid-upgrade.
+   A first install that was stopped before it finished (for example by a redeploy in the first minutes) holds no user data yet: its tables are dropped and the install starts again.
 4. Runs Moodle's cron every minute in the background, and starts Apache on `PORT` (8080).
 
 `/healthz` answers 200 when PHP is up and the database is reachable. It's the Railway health check.
