@@ -1,3 +1,5 @@
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template/moodle-2?utm_medium=integration&utm_source=button&utm_campaign=moodle)
+
 # Moodle on Railway
 
 A Railway template for [Moodle LMS](https://moodle.org), the open-source learning platform, built from this repository.
@@ -29,6 +31,8 @@ A Railway template for [Moodle LMS](https://moodle.org), the open-source learnin
 | `PORT` | `8080` | Port Apache listens on. |
 
 Optional, read only on the first install: `MOODLE_ADMIN_USER` (default `admin`), `MOODLE_ADMIN_EMAIL`, `MOODLE_SITE_NAME`, `MOODLE_SITE_SHORTNAME`, `MOODLE_LANG` (default `en`). Outgoing mail (SMTP) is set in Moodle under Site administration → Server → Email.
+
+After deploy: the first boot takes 3 to 4 minutes while Moodle installs. Then open the public URL and log in as `admin` with `MOODLE_ADMIN_PASSWORD` from the Moodle service's Variables tab. Change the password and set your email in Moodle after the first login.
 
 ## Updates
 
