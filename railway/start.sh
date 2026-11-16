@@ -78,5 +78,11 @@ trap - EXIT
   done
 ) &
 
+# Apache must load exactly one MPM (prefork, for mod_php). On Railway the image can come up
+# with mpm_event enabled again next to prefork, and Apache then refuses to start.
+for m in mpm_event mpm_worker; do rm -f "/etc/apache2/mods-enabled/$m.load" "/etc/apache2/mods-enabled/$m.conf"; done
+[ -e /etc/apache2/mods-enabled/mpm_prefork.load ] || a2enmod -q mpm_prefork
+log "Apache MPM: $(ls /etc/apache2/mods-enabled | grep '^mpm_.*load$' | tr '\n' ' ')"
+
 log "starting Apache on port $PORT"
 exec moodle-docker-php-entrypoint apache2-foreground
